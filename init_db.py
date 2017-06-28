@@ -1,6 +1,6 @@
 import sys
-from device import Device
-from device import db
+from server import Device
+from server import db
 
 
 if len(sys.argv) == 3:

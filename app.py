@@ -1,9 +1,7 @@
-from flask import Flask, request, jsonify
-from sqlalchemy import create_engine
-
-
-db_conncect = create_engine('sqlite:///testdb.db')
-app = Flask(__name__)
+from flask import request, jsonify
+from server import Device, History, db, app
+from datetime import datetime
+from sqlalchemy import and_
 
 
 languages = [{'name': 'JS'}, {'name': 'Python'}, {'name': 'Ruby'}]
@@ -13,9 +11,12 @@ languages = [{'name': 'JS'}, {'name': 'Python'}, {'name': 'Ruby'}]
 def test():
     return jsonify({'message': 'It Works'})
 
-@app.route('/lang', methods=['GET'])
-def getLangs():
-    return jsonify({'languages': languages})
+
+@app.route('/devices', methods=['GET'])
+def getDevices():
+    devices = Device.query.all()
+    return jsonify({'Devices': devices})
+
 
 @app.route('/lang', methods=['POST'])
 def addOne():
@@ -23,17 +24,29 @@ def addOne():
     languages.append(language)
     return jsonify({'languages': languages})
 
-@app.route('/lang/<string:name>', methods=['GET'])
-def getOne(name):
-    langs =[language for language in languages if language['name'] == name]
-    return jsonify({'language': langs[0]})
+
+@app.route('/device/<string:id>', methods=['GET'])
+def getOne(id):
+    device = Device.query.filter_by(id=id).first()
+    return str(device.isOn)
 
 
-@app.route('/lang/<string:name>', methods=['PUT'])
-def editOne(name):
-    langs =[language for language in languages if language['name'] == name]
-    langs[0]['name'] = request.json['name']
-    return jsonify({'language': langs[0]})
+@app.route('/device/<string:id>', methods=['PUT'])
+def editOne(id):
+    device = Device.query.filter_by(id=id).first()
+    device.owner = request.json['owner']
+    device.isOn = request.json['is_on']
+    db.session.commit()
+    if request.json['is_on'] == 1:
+        max_id = len(History.query.all())
+        new_data = History(max_id+1, id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 0, 0, request.json['owner'])
+        db.session.add(new_data)
+        db.session.commit()
+    if request.json['is_on'] == 0:
+        history = History.query.filter(and_(History.deviceId == id), (History.endTime == 0)).first()
+        history.endTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db.session.commit()
+    return 'Updated'
 
 if __name__ == '__main__':
     app.run(port='5002')

@@ -1,47 +1,36 @@
-from flask import Flask, request
-from flask_restful import Resource, Api
-from sqlalchemy import create_engine
-from json import dumps
-from flask.ext.jsonpify import jsonify
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
-db_connect = create_engine('sqlite:///chinook.db')
 app = Flask(__name__)
-api = Api(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///testdb.db'
+db = SQLAlchemy(app)
 
 
-class Employees(Resource):
-    def get(self):
-        conn = db_connect.connect()  # connect to database
-        query = conn.execute("select * from employees")  # This line performs query and returns json result
-        return {'employees': [i[0] for i in query.cursor.fetchall()]}  # Fetches first column that is Employee ID
+class Device(db.Model):
+    __tablename__ = 'device'
+    id = db.Column('ID', db.Integer, primary_key=True)
+    isOn = db.Column('is_on', db.Integer)
+    owner = db.Column('owner', db.Unicode)
+
+    def __init__(self, id, isOn, owner):
+        self.id = id
+        self.isOn = isOn
+        self.owner = owner
 
 
-class Tracks(Resource):
-    def get(self):
-        conn = db_connect.connect()
-        query = conn.execute("select trackid, name, composer, unitprice from tracks;")
-        result = {'data': [dict(zip(tuple(query.keys()), i)) for i in query.cursor]}
-        return jsonify(result)
+class History(db.Model):
+    __tablename__ = 'history'
+    id = db.Column('ID', db.Integer, primary_key=True)
+    deviceId = db.Column('device_id', db.Integer)
+    startTime = db.Column('start_time', db.Unicode)
+    endTime = db.Column('end_time', db.Unicode)
+    waitedTime = db.Column('waited_time', db.Unicode)
+    owner = db.Column('owner', db.Unicode)
 
-class Artists(Resource):
-    def get(self):
-        conn = db_connect.connect()
-        query = conn.execute("select artistid, name from artists;")
-        result = {'data': [dict(zip(tuple(query.keys()), i)) for i in query.cursor]}
-        return jsonify(result)
-
-class Employees_Name(Resource):
-    def get(self, employee_id):
-        conn = db_connect.connect()
-        query = conn.execute("select * from employees where EmployeeId =%d " % int(employee_id))
-        result = {'data': [dict(zip(tuple(query.keys()), i)) for i in query.cursor]}
-        return jsonify(result)
-
-
-api.add_resource(Employees, '/employees')  # Route_1
-api.add_resource(Tracks, '/tracks')  # Route_2
-api.add_resource(Artists, '/artists')  # Route_2.5
-api.add_resource(Employees_Name, '/employees/<employee_id>')  # Route_3
-
-if __name__ == '__main__':
-    app.run(port='5002')
+    def __init__(self, id, deviceId, startTime, endTime, waitedTime, owner):
+        self.id = id
+        self.deviceId = deviceId
+        self.startTime = startTime
+        self.endTime = endTime
+        self.waitedTime = waitedTime
+        self.owner = owner
