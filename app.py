@@ -44,6 +44,10 @@ def editOne(id):
         db.session.commit()
     if request.json['is_on'] == 0:
         history = History.query.filter(and_(History.deviceId == id), (History.endTime == 0)).first()
+        startTime = history.startTime
+        startTime = datetime.strptime(startTime, '"%Y-%m-%d %H:%M:%S"')
+        endTime = datetime.now()
+        waitedTime = endTime - startTime
         history.endTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         db.session.commit()
     return 'Updated'
