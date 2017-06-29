@@ -1,4 +1,6 @@
 from flask import request, jsonify
+
+from support import milisToDate
 from server import Device, History, db, app
 from datetime import datetime
 from sqlalchemy import and_
@@ -45,9 +47,11 @@ def editOne(id):
     if request.json['is_on'] == 0:
         history = History.query.filter(and_(History.deviceId == id), (History.endTime == 0)).first()
         startTime = history.startTime
-        startTime = datetime.strptime(startTime, '"%Y-%m-%d %H:%M:%S"')
+        startTime = datetime.strptime(startTime, "%Y-%m-%d %H:%M:%S")
         endTime = datetime.now()
         waitedTime = endTime - startTime
+        waitedTime = milisToDate(waitedTime)
+        history.waitedTime = waitedTime
         history.endTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         db.session.commit()
     return 'Updated'
