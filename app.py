@@ -33,12 +33,11 @@ def getOne(id):
     return str(device.isOn)
 
 
-@app.route('/device/<string:id>', methods=['PUT'])
+@app.route('/device/<string:id>', methods=['POST'])
 def editOne(id):
     device = Device.query.filter_by(id=id).first()
     device.owner = request.json['owner']
     device.isOn = request.json['is_on']
-    db.session.commit()
     if request.json['is_on'] == 1:
         max_id = len(History.query.all())
         new_data = History(max_id+1, id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 0, 0, request.json['owner'])
@@ -53,8 +52,9 @@ def editOne(id):
         waitedTime = milisToDate(waitedTime)
         history.waitedTime = waitedTime
         history.endTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        history.owner = request.json['owner']
         db.session.commit()
     return 'Updated'
 
 if __name__ == '__main__':
-    app.run(port='5002')
+    app.run(host="", port='5002')
