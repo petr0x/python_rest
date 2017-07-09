@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <Ticker.h>
 
 #define LED_PIN 16
 #define WAIT 5
@@ -8,8 +9,23 @@
 const char* ssid = "(V)Home";
 const char* password = "s0l1c0n0baru";
 
+Ticker secondTick;
+volatile int watchdogCount = 0;
+
+
+void ISRwatchdog(){
+  watchdogCount++;
+  if (watchdogCount == 5){
+    Serial.println();
+    Serial.println("WATCHDOG RESET!");
+    ESP.reset();
+  }
+}
+
 void setup() {
   
+  secondTick.attach(1, ISRwatchdog);
+
   pinMode(LED_PIN, OUTPUT);
   pinMode(WAIT, INPUT);
   pinMode(WAIT_END, INPUT);
@@ -31,6 +47,8 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED){
     
     HTTPClient http;
+
+    watchdogCount = 0;
 
     if(digitalRead(WAIT) == HIGH && digitalRead(LED_PIN) == LOW){
       
